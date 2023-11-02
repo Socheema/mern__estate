@@ -1,12 +1,13 @@
 import express from "express";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
+import userRouter from './routes/User.route.js'
 dotenv.config();
-// bRdEUuHUMCWAKmFy
+
 mongoose
   .connect(process.env.MONGO__URI)
   .then(() => {
-    console.log("Connect to MondoDB!!!");
+    console.log("Connected to the database");
   })
   .catch((err) => {
     console.log(err);
@@ -14,6 +15,10 @@ mongoose
 
 const app = express();
 
-app.listen(3000, () => {
-  console.log("Server is running on port 3000!!!");
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+  console.log(`Server is listening on port:${PORT}`);
 });
+
+app.use('/api/user', userRouter)
