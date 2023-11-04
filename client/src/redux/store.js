@@ -8,14 +8,14 @@ const rootReducer = combineReducers({ user: userReducer });
 
 const persistConfig = {
   key: "root",
-  storage, // Use the 'storage' imported from redux-persist
+  storage, 
   version: 1
 };
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);
 
 export const store = configureStore({
-  reducer: persistedReducer, // Use 'persistedReducer' instead of 'persistReducer'
+  reducer: persistedReducer, 
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: false,
