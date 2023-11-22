@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect } from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import {
   getDownloadURL,
   getStorage,
@@ -7,6 +7,11 @@ import {
   uploadBytesResumable,
 } from "firebase/storage";
 import { app } from "../firebase";
+import {
+  updateUserFailure,
+  updateUserStart,
+  updateUserSucces,
+} from "../redux/user/userSlice";
 
 const Profile = () => {
   const fileRef = useRef(null);
@@ -16,7 +21,7 @@ const Profile = () => {
   const [fileUploaderror, setFileUploadError] = useState(false);
   const [formData, setFormData] = useState({});
 
-  console.log(filePercentage);
+  const dispatch = useDispatch();
 
   useEffect(() => {
     if (file) {
@@ -36,7 +41,7 @@ const Profile = () => {
           (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
         setFilePercentage(Math.round(progress));
       },
-      (error) => {
+      () => {
         setFileUploadError(true);
       },
       () => {
@@ -47,10 +52,36 @@ const Profile = () => {
     );
   };
 
+  const handleFormUpdate = (e) => {
+    setFormData({ ...formData, [e.target.id]: e.target.value });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      dispatch(updateUserStart());
+      const res = await fetch(`/api/user/update/${currentUser._id}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+      const data = await res.json();
+      if (data.success === false) {
+        dispatch(updateUserFailure(error.message));
+        return;
+      }
+      dispatch(updateUserSucces(data));
+    } catch (error) {
+      dispatch(updateUserFailure(error.message));
+    }
+  };
+
   return (
     <div className="p-3 max-w-lg mx-auto">
       <h1 className="text-3xl font-semibold text-center my-7">Profile</h1>
-      <form className="flex flex-col gap-4">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <input
           type="file"
           name=""
@@ -66,7 +97,7 @@ const Profile = () => {
           }}
         />
         <img
-          src={formData.avatar || currentUser.avatar}
+          src={formData?.avatar || currentUser.avatar}
           onClick={() => fileRef.current.click()}
           alt="profile_image"
           className="rounded-full h-24 w-24 object-cover self-center mt-2"
@@ -76,7 +107,7 @@ const Profile = () => {
             <span className="text-red-700">
               Error image upload- {`Image must be less than 2MB`}
             </span>
-          ) : filePercentage >0 && filePercentage < 100 ? (
+          ) : filePercentage > 0 && filePercentage < 100 ? (
             <span className="text-slate-700">
               {`Loading...${filePercentage}%`}
             </span>
@@ -91,18 +122,23 @@ const Profile = () => {
           placeholder="username"
           className="rounded-full p-3 border"
           id="username"
+          defaultValue={currentUser.username}
+          onChange={handleFormUpdate}
         />
         <input
           type="email"
           placeholder="email"
           className="rounded-full p-3 border"
           id="email"
+          defaultValue={currentUser.email}
+          onChange={handleFormUpdate}
         />
         <input
           type="password"
           placeholder="password"
           className="rounded-full p-3 border"
           id="password"
+          onChange={handleFormUpdate}
         />
         <button className="bg-slate-700 text-white rounded-full p-3 uppercase hover:opacity-95 disabled:opacity-80">
           Update
